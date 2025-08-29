@@ -1,4 +1,3 @@
-
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -103,13 +102,14 @@
                             @enderror
                         </div>
                         <div class="mb-4">
-                            <label for="signature" class="block text-sm font-medium text-gray-700">Signature</label>
+                            <label for="signature" class="block text-sm font-medium text-gray-700">Signature (Draw or Upload)</label>
                             <canvas id="signature-pad" class="border border-gray-300 rounded-md" width="310" height="114" aria-label="Draw your signature"></canvas>
-                            <input type="hidden" name="signature" id="signature-input">
                             <div class="mt-2">
-                                <button type="button" id="clear-signature" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Clear Signature</button>
+                                <input type="file" id="signature-upload" accept="image/png,image/jpeg" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" aria-label="Upload signature image">
+                                <button type="button" id="clear-signature" class="mt-2 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Clear Signature</button>
                                 <img id="signature-preview" class="hidden mt-2" style="width:150px;height:60px;" alt="Signature Preview">
                             </div>
+                            <input type="hidden" name="signature" id="signature-input">
                             @error('signature')
                                 <span class="text-red-500 text-sm">{{ $message }}</span>
                             @enderror
@@ -140,6 +140,7 @@
             const signatureInput = document.getElementById('signature-input');
             const signaturePreview = document.getElementById('signature-preview');
             const clearButton = document.getElementById('clear-signature');
+            const signatureUpload = document.getElementById('signature-upload');
             const submitButton = document.getElementById('submit-button');
             const generationType = document.getElementById('generation_type');
             const singleUserSelection = document.getElementById('single-user-selection');
@@ -147,19 +148,47 @@
             const userIdSelect = document.getElementById('user_id');
             const userIdsSelect = document.getElementById('user_ids');
 
-            // Update signature input and preview
-            signaturePad.addEventListener('endStroke', () => {
-                const dataUrl = signaturePad.toDataURL('image/png');
+            // Function to update signature input and preview
+            function updateSignature(dataUrl) {
                 signatureInput.value = dataUrl;
                 signaturePreview.src = dataUrl;
                 signaturePreview.classList.remove('hidden');
-                submitButton.disabled = signaturePad.isEmpty();
-                console.log('Signature captured:', dataUrl.substring(0, 50) + '...'); // Debug
+                submitButton.disabled = !dataUrl;
+                console.log('Signature updated:', dataUrl.substring(0, 50) + '...');
+            }
+
+            // Handle canvas signature
+            signaturePad.addEventListener('endStroke', () => {
+                const dataUrl = signaturePad.toDataURL('image/png');
+                updateSignature(dataUrl);
+            });
+
+            // Handle image upload
+            signatureUpload.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const img = new Image();
+                        img.onload = function () {
+                            // Clear canvas and draw uploaded image
+                            const ctx = canvas.getContext('2d');
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            const dataUrl = canvas.toDataURL('image/png');
+                            updateSignature(dataUrl);
+                            signaturePad.clear(); // Clear signature pad strokes
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
             });
 
             // Clear signature
             clearButton.addEventListener('click', () => {
                 signaturePad.clear();
+                signatureUpload.value = '';
                 signatureInput.value = '';
                 signaturePreview.src = '';
                 signaturePreview.classList.add('hidden');
@@ -185,11 +214,7 @@
             // Update form action
             window.updateFormAction = function () {
                 const form = document.getElementById('certificate-form');
-                if (generationType.value === 'multiple') {
-                    form.action = "{{ route('certificate.generateMultiple') }}";
-                } else {
-                    form.action = "{{ route('certificate.generate') }}";
-                }
+                form.action = "{{ route('certificate.generate') }}";
             };
 
             // Date validation
@@ -207,9 +232,9 @@
 
             // Form submission validation
             document.getElementById('certificate-form').addEventListener('submit', function (event) {
-                if (signaturePad.isEmpty()) {
+                if (!signatureInput.value) {
                     event.preventDefault();
-                    alert('Please provide a signature.');
+                    alert('Please provide a signature by drawing or uploading an image.');
                     console.log('Form submission blocked: No signature');
                 }
                 if (generationType.value === 'single' && !userIdSelect.value) {

@@ -57,6 +57,8 @@ class CertificateController extends Controller
         $user = User::findOrFail($data['user_id']);
         $template = CertificateTemplate::findOrFail($data['template_id']);
 
+        $certificate_id = uniqid('cert_');
+
         return Certificate::create([
             'name' => $user->name,
             'certificate_type' => $template->name,
@@ -68,6 +70,7 @@ class CertificateController extends Controller
             'company_name' => $data['company_name'],
             'signature' => $this->saveSignature($data['signature']),
             'issued_date' => $data['date_signed'],
+            'certificate_id' => $certificate_id,
             'user_id' => $data['user_id'],
             'template_id' => $data['template_id'],
         ]);
@@ -93,7 +96,8 @@ class CertificateController extends Controller
 
         if (file_exists($absolutePath)) {
             $imageData = base64_encode(file_get_contents($absolutePath));
-            $html = str_replace('{{signature}}', '<img src="data:image/png;base64,' . $imageData . '" alt="Signature" style="max-width:150px;max-height:60px;object-fit:contain;">', $html);
+            $mimeType = mime_content_type($absolutePath);
+            $html = str_replace('{{signature}}', '<img src="data:' . $mimeType . ';base64,' . $imageData . '" alt="Signature" style="max-width:150px;max-height:60px;object-fit:contain;">', $html);
         } else {
             Log::warning("Signature file not found: {$absolutePath}");
         }
@@ -103,16 +107,17 @@ class CertificateController extends Controller
 
     private function saveSignature(string $signature): string
     {
-        if (!preg_match('/^data:image\/png;base64,/', $signature)) {
-            throw new \Exception('Invalid PNG signature format.');
+        if (!preg_match('/^data:image\/(png|jpeg);base64,/', $signature, $matches)) {
+            throw new \Exception('Invalid signature format. Only PNG and JPEG are supported.');
         }
 
+        $imageType = $matches[1];
         $signatureData = base64_decode(preg_replace('#^data:image/\w+;base64,(.+)#', '$1', $signature), true);
         if ($signatureData === false) {
             throw new \Exception('Invalid base64 signature data.');
         }
 
-        $path = 'signatures/' . uniqid('sig_') . '.png';
+        $path = 'signatures/' . uniqid('sig_') . '.' . $imageType;
         Storage::disk('public')->put($path, $signatureData) ?: throw new \Exception('Failed to save signature.');
 
         return Storage::disk('public')->url($path);
