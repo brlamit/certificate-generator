@@ -17,6 +17,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::post('/test-signature', [App\Http\Controllers\CertificateController::class, 'testSignature']);
   Route::get('/certificates/form', [CertificateController::class, 'showForm'])->name('certificate.form');
 Route::post('/certificates/generate', [CertificateController::class, 'generate'])->name('certificate.generate');
 Route::post('/certificates/generate-multiple', [CertificateController::class, 'generateMultiple'])->name('certificate.generateMultiple');
