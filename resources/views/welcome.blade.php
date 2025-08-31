@@ -44,7 +44,7 @@
             <div class="flex justify-between h-16 items-center">
                 <div class="flex-shrink-0">
                     <a href="{{ url('/') }}" class="text-2xl font-bold navbar-text">
-                        {{ config('app.name', 'CertiNepal') }}
+                        {{''}} <span class="text-indigo-600">CertiNepal</span>
                     </a>
                 </div>
                 <div class="flex space-x-4 items-center">
@@ -66,7 +66,7 @@
     <!-- Hero Section -->
     <section class="hero-section py-20 relative overflow-hidden">
         <div class="max-w-7xl mx-auto px-4 text-center">
-            <h1 class="text-5xl md:text-6xl font-extrabold mb-6 animate-fadeInUp">Welcome to {{ config('app.name', 'CertiNepal') }}</h1>
+            <h1 class="text-5xl md:text-6xl font-extrabold mb-6 animate-fadeInUp">Welcome to <span class="text-indigo-600">CertiNepal</span></h1>
             <p class="text-xl md:text-2xl mb-8 text-gray-200 animate-fadeInUp" style="animation-delay: 0.2s;">Generate professional certificates with ease.</p>
             <div class="animate-fadeInUp" style="animation-delay: 0.4s;">
                 <a href="#preview" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow hover:bg-indigo-700 transition">View Sample</a>
